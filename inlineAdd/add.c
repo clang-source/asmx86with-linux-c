@@ -29,7 +29,7 @@ int user_add0(int a,int b){
 	return  ret;
 }
 
-int user_add2(int a){
+int   user_add2(int a){
 	int ret =0;
 	int c =100;
 
@@ -43,6 +43,31 @@ int user_add2(int a){
 	return ret;
 }
 
+
+static int atomic_int_inc(int * addr,int addValue){
+	int ret=0;
+
+	__asm__ __volatile__(
+		"lock;xaddl %2,%1;"
+		:"=a"(ret)
+		:"m"(*addr),"0"(addValue)  //or :"m"(*addr),"a"(addValue)
+		:"memory" ,"cc"
+	);
+
+	return ret;
+}
+
+int  user_addInc(int *a,int delta){
+	int ret =0;
+	//xaddl reg,mem
+	__asm__ __volatile__(
+		"xadd %2,%1;"
+		:"=a"(ret)
+		:"m"(*a),"0"(delta)
+		:"memory","cc"
+	);
+	return ret;
+}
 
 //inline 版函数实现
 int main(int argc,const char *argvs[]){
@@ -58,7 +83,11 @@ int main(int argc,const char *argvs[]){
 		:"eax","ebx","memory"
 	);
 ****/
-	printf("res= %d\n",user_add2(a));
+	//printf("res= %d\n",user_add2(a));
+
+	printf("res=%d, a=%d\n",user_addInc(&a,b),a);//printf 函数做了 传入参数的copy ,就算函数user_addInc 修改了a,打印还是 a 旧的值=10
+	printf("a=%d\n",a);//最新值110
+
 	return 0;
 }
 
